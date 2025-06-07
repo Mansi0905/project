@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CloakTalk Chatbot</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #1e1e2f, #2a2a40);
+      color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: #2e2e3e;
+      border-radius: 12px;
+      width: 95%;
+      max-width: 420px;
+      padding: 20px;
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.2);
+    }
+
+    h2 { text-align: center; margin-bottom: 20px; color: #00fff7; }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+
+    input { background: #444; color: #fff; }
+
+    button {
+      background: #00fff7;
+      color: #000;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #00e2e2;
+    }
+
+    .chat-box {
+      background: #1f1f2d;
+      height: 320px;
+      overflow-y: auto;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .message {
+      margin: 10px 0;
+      font-size: 0.95rem;
+    }
+
+    .user-msg { text-align: right; color: #00ccff; }
+    .bot-msg { text-align: left; color: #aaffaa; }
+
+    .timestamp {
+      display: block;
+      font-size: 0.75rem;
+      color: #888;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .reset-btn {
+      background: #ff4b5c;
+      color: white;
+      width: auto;
+      padding: 8px 12px;
+    }
+
+    @media (max-width: 500px) {
+      .container { padding: 15px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <!-- Login Screen -->
+  <div id="loginScreen">
+    <h2>CloakTalk Login</h2>
+    <input type="text" id="usernameInput" placeholder="Enter your name">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Chat Screen -->
+  <div id="chatScreen" style="display:none;">
+    <div class="top-bar">
+      <div id="greeting"></div>
+      <button class="reset-btn" onclick="resetChat()">Reset</button>
+    </div>
+    <div class="chat-box" id="chatBox"></div>
+    <input type="text" id="userInput" placeholder="Type a message..." onkeypress="handleKey(event)">
+    <button onclick="sendMessage()">Send</button>
+  </div>
+</div>
+
+<script>
+  const loginScreen = document.getElementById("loginScreen");
+  const chatScreen = document.getElementById("chatScreen");
+  const chatBox = document.getElementById("chatBox");
+  const greeting = document.getElementById("greeting");
+
+  const replies = {
+  hi: "Hello! Welcome to CloakTalk.",
+  hello: "Hi there! 👋 How can I assist you today?",
+  bye: "Goodbye! See you soon!",
+  thanks: "You're welcome!",
+  help: "I can help you with product info, orders, and more!",
+  order: "Please provide the product name you'd like to order.",
+  shoes: "We offer sneakers, boots, and running shoes.",
+  bags: "We have backpacks, handbags, and duffle bags.",
+  laptop: "Yes, we have a variety of laptops starting at ₹30,000.",
+  phone: "Our phone collection includes Android and iPhone models.",
+  price: "Prices vary. Please specify the product.",
+  college: "We offer special discounts for students.",
+  anime: "Check out our anime merchandise section!",
+  hoodies: "Yes! Hoodies in all sizes are available.",
+  sale: "There's a sale on electronics this week!",
+  return: "Returns are accepted within 7 days of delivery.",
+  refund: "Refunds are processed within 3–5 working days.",
+  delay: "Your order may be delayed due to weather conditions.",
+  delivery: "Standard delivery takes 3–5 business days.",
+  payment: "We accept UPI, card, and COD.",
+  status: "Please enter your order ID to check the status.",
+  cart: "You can add items to your cart before checkout.",
+  wishlist: "Save items to wishlist to buy later!",
+  account: "Visit your profile section to manage your account.",
+  email: "You can reach us at support@cloaktalk.com.",
+  support: "Customer support is available 24/7.",
+  instagram: "Follow us @cloaktalk.shop",
+  twitter: "Follow our updates on Twitter!",
+  facebook: "We’re also on Facebook at CloakTalk Store!",
+  discount: "Use code CT10 for 10% off!",
+  offers: "Today’s offer: Buy 2 get 1 free on accessories!",
+  recharge: "Recharge option is under wallet > recharge.",
+  wallet: "Your wallet balance can be seen under 'My Wallet'.",
+  profile: "Edit your profile info from account settings.",
+  "payment failed": "Try again or use another payment method.",
+  new: "We just added a new line of anime plushies!",
+  gift: "Gift wrap option is available at checkout.",
+  login: "You're already logged in 😉.",
+  logout: "Use the profile menu to log out safely.",
+  "delivery boy": "Our delivery agents are trained and verified.",
+  tshirt: "Anime-themed T-shirts are on sale today!",
+  cap: "Caps available in cool colors.",
+  mug: "Anime mugs are popular this season!",
+  pillow: "Check our comfort anime pillow sets.",
+  feedback: "We appreciate your feedback!",
+  complain: "Sorry for the issue. Our support will reach out.",
+  suggestion: "Thanks! We'll forward your suggestion.",
+  explore: "Use our categories to explore more items.",
+  search: "Try typing the product name or keyword.",
+  "login issue": "Try clearing cache or resetting your password.",
+  error: "Please describe the error you encountered.",
+  coupons: "See current coupons in the offers section.",
+  membership: "Join CloakClub for exclusive perks!",
+  subscribe: "Subscribe to our newsletter for weekly offers.",
+  language: "CloakTalk supports Hindi, English, and Japanese.",
+  currency: "You can change currency in settings.",
+  "indian brands": "Yes! We support many local Indian brands.",
+  international: "We deliver internationally with extra charges.",
+  location: "Allow location to find products near you.",
+  safe: "Yes, shopping here is 100% safe.",
+  secure: "We use end-to-end encryption for transactions.",
+  privacy: "Read our privacy policy in the footer.",
+  terms: "Terms & conditions are listed below.",
+  "return policy": "Returns allowed within 7 days.",
+  cancel: "You can cancel your order within 24 hours.",
+  stock: "Stocks are updated in real-time.",
+  broken: "We'll replace defective items free of charge.",
+  review: "Check product reviews below each item.",
+  warranty: "Warranty info is listed per product.",
+  compare: "Use the compare tool on product pages.",
+  color: "Choose color from product options.",
+  size: "Check size chart before adding to cart.",
+  material: "Materials are listed in product description.",
+  eco: "We support eco-friendly packaging!",
+  shipping: "Shipping starts at ₹50 or free above ₹999.",
+  "payment method": "UPI, card, netbanking, and COD are supported.",
+  pickup: "In-store pickup available in select cities.",
+  "cancel order": "Go to orders > cancel.",
+  "forgot password": "Use the Forgot Password link on login.",
+  "recharge wallet": "Go to Wallet > Add Money.",
+  "credit card": "We accept Visa, MasterCard, and RuPay.",
+  update: "You can update your info in your profile.",
+  profilepic: "Upload your profile pic in settings.",
+  giftcard: "We sell gift cards too!",
+  birthday: "Wish you a happy birthday! 🎉",
+  anniversary: "Happy anniversary from all of us!",
+  greeting: "Have a great day ahead!",
+  chatbot: "Yes, I'm a smart assistant for CloakTalk 😊.",
+  clothing: "Clothing categories include tops, bottoms, and accessories.",
+  electronics: "We have phones, laptops, and smartwatches.",
+  accessories: "Glasses, belts, bags, and more!",
+  trending: "See the trending section for latest deals.",
+  "top 10": "Check out the top 10 items in each category!",
+  rating: "You can rate products after delivery.",
+  track: "Track your order from your dashboard.",
+  offercode: "Use CTFIRST for new users!",
+  loyalty: "Join our loyalty program for points.",
+  points: "Earn points on every purchase.",
+  invite: "Invite friends and earn cashback.",
+  cashback: "Cashback is auto-applied at checkout.",
+  faq: "Visit our FAQ page for common questions.",
+  festival: "Special offers available during Diwali, Holi, and Eid.",
+  theme: "Switch to dark/light mode in settings.",
+  animefigures: "Browse limited-edition anime figures!",
+  plushies: "Soft anime plushies are restocked!",
+  livechat: "You can also chat live with support."
+};
+
+  
+
+  function login() {
+    const username = document.getElementById("usernameInput").value.trim();
+    if (username) {
+      localStorage.setItem("chatUser", username);
+      loginScreen.style.display = "none";
+      chatScreen.style.display = "block";
+      greeting.textContent = `Hi, ${username}!`;
+      loadChat();
+    }
+  }
+
+  function sendMessage() {
+    const input = document.getElementById("userInput");
+    const message = input.value.trim();
+    if (message === "") return;
+
+    addMessage("user", message);
+    input.value = "";
+
+    setTimeout(() => {
+      const reply = generateBotReply(message);
+      addMessage("bot", reply);
+    }, 400);
+  }
+
+  function handleKey(event) {
+    if (event.key === "Enter") sendMessage();
+  }
+
+  function addMessage(sender, text) {
+    const time = new Date().toLocaleTimeString();
+    const div = document.createElement("div");
+    div.className = `message ${sender}-msg`;
+    div.innerHTML = `<div>${text}</div><span class="timestamp">${time}</span>`;
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    const chatLog = JSON.parse(localStorage.getItem("chatLog") || "[]");
+    chatLog.push({ sender, text, time });
+    localStorage.setItem("chatLog", JSON.stringify(chatLog));
+  }
+
+  function loadChat() {
+    const messages = JSON.parse(localStorage.getItem("chatLog") || "[]");
+    messages.forEach(({ sender, text, time }) => {
+      const div = document.createElement("div");
+      div.className = `message ${sender}-msg`;
+      div.innerHTML = `<div>${text}</div><span class="timestamp">${time}</span>`;
+      chatBox.appendChild(div);
+    });
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function resetChat() {
+    if (confirm("Reset chat history?")) {
+      localStorage.removeItem("chatLog");
+      chatBox.innerHTML = "";
+    }
+  }
+
+  function generateBotReply(input) {
+    const key = input.toLowerCase();
+    for (const keyword in replies) {
+      if (key.includes(keyword)) return replies[keyword];
+    }
+    return "Sorry, I didn’t understand that. Can you rephrase?";
+  }
+
+  // Auto-login
+  const savedUser = localStorage.getItem("chatUser");
+  if (savedUser) {
+    loginScreen.style.display = "none";
+    chatScreen.style.display = "block";
+    greeting.textContent = `Hi, ${savedUser}!`;
+    loadChat();
+  }
+</script>
+</body>
+</html>
